@@ -2,11 +2,15 @@ import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 import numpy as np
 import pandas as pd
+import time
+
 import category_encoders as ce
 import xgboost
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import KFold # import KFold
+from sklearn.metrics import mean_absolute_error, r2_score
+import RegscorePy
 
 # Extracting the training and test datasets
 
@@ -57,7 +61,17 @@ for train_index, test_index in kf.split(x):
 
     xgb_model.fit(x_train, y_train)
     # Make predictions on test data
+    start = time.time()
     predictions = xgb_model.predict(x_test)
+    end = time.time()
+    duration = end - start
     # Performance metrics
-    errors = abs(predictions - y_test)
-    print('Mean absolute error:', round(np.mean(errors), 2), 'Nok.')
+    mse = mean_absolute_error(y_test, predictions)
+    print('mse is:', mse)
+    print('XgBoost Testing Duration: ', duration)
+    r2 = r2_score(y_test, predictions)
+    print('r2 is: ', r2)
+    adjusted_r_squared = 1 - (1 - r2) * (len(y_test) - 1) / (len(y_test) - x_test.shape[1] - 1)
+    print('adj_r2 is: ', adjusted_r_squared)
+    print ('AIC is: ', RegscorePy.aic.aic(np.asarray(y_test), np.asarray(predictions), 519))
+    print("Best parameters:", xgb_model.best_params_)

@@ -1,5 +1,6 @@
 import numpy as np
 import pandas as pd
+import time
 
 from sklearn.ensemble import RandomForestRegressor
 from sklearn.model_selection import train_test_split
@@ -7,6 +8,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.decomposition import PCA # PCA
 from sklearn.model_selection import RandomizedSearchCV # Hyper-Parameter Optimization
 from pprint import pprint
+from sklearn.metrics import mean_absolute_error, r2_score
+import RegscorePy
 
 df = pd.read_csv("pdata_2012.csv", error_bad_lines=False, usecols=range(2, 27) + range(28, 54) + [70], header=0)
 
@@ -73,15 +76,19 @@ print ("No. of PCs:", pca.n_components_)
 x_train = pca.transform(x_train)
 x_test = pca.transform(x_test)
 
-model_random.fit(x_train, y_train);
+model_random.fit(x_train, y_train)
 # Make predictions on test data
+start = time.time()
 predictions = model_random.predict(x_test)
+end = time.time()
+duration = end - start
 # Performance metrics
-errors = abs(predictions - y_test)
-print('Average absolute error after PCA:', round(np.mean(errors), 2), 'Nok.')
-# Calculate mean absolute percentage error (MAPE)
-mape = 100 * (errors / y_test)
-# Calculate and display accuracy
-accuracy = 100 - np.mean(mape)
-print('Accuracy after PCA:', round(accuracy, 2), '%.')
+mse = mean_absolute_error(y_test, predictions)
+print('mse is:', mse)
+print('RF Testing Duration: ', duration)
+r2 = r2_score(y_test, predictions)
+print('r2 is: ', r2)
+adjusted_r_squared = 1 - (1 - r2) * (len(y_test) - 1) / (len(y_test) - x_test.shape[1] - 1)
+print('adj_r2 is: ', adjusted_r_squared)
+print ('AIC is: ', RegscorePy.aic.aic(np.asarray(y_test), np.asarray(predictions), 519))
 print("Best parameters:", model_random.best_params_)
